@@ -70,3 +70,11 @@
           wget https://zoom.us/client/latest/zoom_amd64.deb
           apt install -y ./zoom_amd64.deb
           rm -f ./zoom_amd64.deb
+
+      - name: install classic snap packages
+        snap:
+          name: "{{item}}"
+          classic: yes
+        loop:
+          - phpstorm
+          - intellij-idea-community
