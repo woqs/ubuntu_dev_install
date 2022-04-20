@@ -2,8 +2,6 @@
   - name: Dev env
     hosts: localhost
     connection: local
-    become: yes
-    become_user: root
     tasks:
 
       - name: Update Packages
@@ -17,7 +15,6 @@
           state: present
         loop:
           - vim
-          - docker
           - wget
           - gpg
           - terminator
@@ -27,6 +24,10 @@
           - php
           - apt-transport-https
           - chromium-browser
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - openjdk-11-jdk
 
       - name: install composer
         args:
@@ -44,6 +45,22 @@
           sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
           rm -f packages.microsoft.gpg
 
+      - name: prepare docker
+        args:
+          warn: false
+        shell: |
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+      - name: prepare sbt
+        args:
+          warn: false
+        shell: |
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
+          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo -H gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import
+          chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
+
       - name: Apt Update
         apt:
           update_cache: yes
@@ -55,6 +72,11 @@
           state: present
         loop:
           - code
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose
+          - sbt
 
       - name: install snap packages
         snap:
@@ -78,3 +100,4 @@
         loop:
           - phpstorm
           - intellij-idea-community
+          - node
